@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: executive_postgres
+    environment:
+      POSTGRES_DB: executive_concierge
+      POSTGRES_USER: executive
+      POSTGRES_PASSWORD: executive_dev_password
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U executive -d executive_concierge']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    container_name: executive_redis
+    command: redis-server --requirepass redis_dev_password
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # API (for production-like local testing)
+  # For development, run `npm run dev` directly
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: executive_api
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://executive:executive_dev_password@postgres:5432/executive_concierge
+      REDIS_URL: redis://:redis_dev_password@redis:6379
+      JWT_ACCESS_SECRET: dev-access-secret-change-in-production
+      JWT_REFRESH_SECRET: dev-refresh-secret-change-in-production
+      PORT: 3000
+    ports:
+      - '3000:3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    profiles:
+      - full
+
+volumes:
+  postgres_data:
+  redis_data:
