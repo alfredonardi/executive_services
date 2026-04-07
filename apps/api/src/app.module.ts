@@ -12,6 +12,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { AiModule } from './modules/ai/ai.module';
 import { CalendarModule } from './modules/calendar/calendar.module';
 import { RecommendationModule } from './modules/recommendation/recommendation.module';
+import { ConciergeModule } from './modules/concierge/concierge.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from './modules/auth/guards/roles.guard';
 import { HealthController } from './health/health.controller';
@@ -55,6 +56,7 @@ import { HealthController } from './health/health.controller';
     AiModule,
     CalendarModule,
     RecommendationModule,
+    ConciergeModule,
   ],
   controllers: [HealthController],
   providers: [
