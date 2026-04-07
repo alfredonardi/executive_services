@@ -51,11 +51,13 @@ export class RecommendationRankingService {
       categoryCount.set(item.category, (categoryCount.get(item.category) ?? 0) + 1);
     }
 
-    // Re-rank from scratch with proper diversity penalty (rank-dependent)
+    // Two-pass ranking: the diversity penalty is rank-dependent (penalises the 2nd item in
+    // a category more than the 1st), so we first sort by raw score to establish a preliminary
+    // order, then apply the penalty in that order and re-sort by the adjusted score.
     categoryCount.clear();
     const ranked: RankedCandidate[] = [];
 
-    // Sort by raw score descending first, then apply diversity penalty
+    // Pass 1: sort by raw score (no diversity penalty yet) to determine processing order.
     scored.sort((a, b) => b.raw - a.raw);
 
     for (const entry of scored) {

@@ -9,6 +9,8 @@ import { RecommendationRankingService } from './recommendation-ranking.service';
 import { RecommendationExplanationService } from './recommendation-explanation.service';
 
 const MAX_RESULTS = 8;
+/** Fallback duration (minutes) when a catalog item has no explicit duration set. */
+const DEFAULT_DURATION_MINUTES = 30;
 
 @Injectable()
 export class RecommendationService {
@@ -73,7 +75,7 @@ export class RecommendationService {
         title: rc.item.title,
         summary: rc.item.description,
         neighborhood: rc.item.neighborhood ?? null,
-        estimatedDurationMinutes: rc.item.durationMinutes ?? rc.item.minDurationMinutes ?? 30,
+        estimatedDurationMinutes: rc.item.durationMinutes ?? rc.item.minDurationMinutes ?? DEFAULT_DURATION_MINUTES,
         suitableWindows: rc.item.suitableWindows,
         relevanceScore: rc.normalizedScore,
         reasons,
@@ -136,7 +138,7 @@ export class RecommendationService {
       notes.push('Your schedule is packed today — check your calendar before booking.');
     }
 
-    const duration = item.durationMinutes ?? item.minDurationMinutes ?? 30;
+    const duration = item.durationMinutes ?? item.minDurationMinutes ?? DEFAULT_DURATION_MINUTES;
     const maxFree =
       context.freeWindows.length > 0
         ? Math.max(...context.freeWindows.map((w) => w.durationMinutes))

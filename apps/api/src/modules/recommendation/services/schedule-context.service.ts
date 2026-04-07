@@ -98,11 +98,18 @@ export class ScheduleContextService {
     // Merge overlapping occupied windows first
     const merged = this.mergeOverlapping(occupiedWindows);
 
+    // Boundary construction guarantees an even-length array:
+    //   [dayStart,  m1.start, m1.end,  m2.start, m2.end,  dayEnd]
+    // Because we add exactly 1 dayStart + 2 per merged meeting + 1 dayEnd = 2n+2 (always even).
+    // Consecutive pairs (i, i+1) for i=0,2,4,… are the FREE gaps between (or around) meetings.
     const boundaries: Date[] = [dayStart, ...merged.flatMap((w) => [w.start, w.end]), dayEnd];
 
-    // `boundaries` alternates between free-window start and free-window end:
-    // [dayStart, meeting1.start, meeting1.end, meeting2.start, meeting2.end, dayEnd]
-    // Pairs at even indices (0,1), (2,3), (4,5) are the FREE periods — step by 2.
+    // Safety assertion: length must be even (1 dayStart + 2×meetings + 1 dayEnd).
+    if (boundaries.length % 2 !== 0) {
+      this.logger.warn('Unexpected odd boundary count — skipping free-window derivation');
+      return freeWindows;
+    }
+
     for (let i = 0; i < boundaries.length - 1; i += 2) {
       const start: Date | undefined = boundaries[i];
       const end: Date | undefined = boundaries[i + 1];
