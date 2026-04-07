@@ -90,6 +90,21 @@ enum AuditAction {
   AI_CALL
   HANDOFF_CREATED
   REQUEST_STATUS_CHANGED
+  CALENDAR_CONNECTED
+  CALENDAR_DISCONNECTED
+  CALENDAR_SYNC_STARTED
+  CALENDAR_SYNC_COMPLETED
+  CALENDAR_SYNC_FAILED
+  CALENDAR_TOKEN_REFRESHED
+  CALENDAR_TOKEN_REFRESH_FAILED
+}
+
+enum SyncStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  PARTIAL
 }
 
 // ─── User & Auth ──────────────────────────────────────────────────────────────
@@ -175,21 +190,26 @@ model Invitation {
 // ─── Calendar ─────────────────────────────────────────────────────────────────
 
 model CalendarConnection {
-  id           String           @id @default(uuid())
-  userId       String
-  provider     CalendarProvider
-  accessToken  String           // encrypted
-  refreshToken String           // encrypted
-  expiresAt    DateTime
-  email        String?
-  calendarId   String?
-  syncedAt     DateTime?
-  isActive     Boolean          @default(true)
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
+  id              String           @id @default(uuid())
+  userId          String
+  provider        CalendarProvider
+  accessToken     String           // encrypted (AES-256-GCM)
+  refreshToken    String           // encrypted (AES-256-GCM)
+  expiresAt       DateTime
+  email           String?          // provider account email
+  calendarId      String?          // primary calendar ID
+  tenantId        String?          // Microsoft Azure tenant ID
+  scopes          String[]         // granted OAuth scopes
+  syncCursor      String?          // incremental sync cursor (nextSyncToken / deltaToken)
+  syncedAt        DateTime?
+  isActive        Boolean          @default(true)
+  disconnectedAt  DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
-  user   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  events CalendarEvent[]
+  user         User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  events       CalendarEvent[]
+  syncAttempts CalendarSyncAttempt[]
 
   @@unique([userId, provider])
   @@map("calendar_connections")
@@ -206,7 +226,10 @@ model CalendarEvent {
   location     String?
   isAllDay     Boolean  @default(false)
   isCancelled  Boolean  @default(false)
-  raw          Json?
+  meetingUrl   String?  // video conference link (Meet, Teams, Zoom)
+  organizer    String?  // organizer email
+  attendees    Json?    // array of {email, name, status}
+  raw          Json?    // raw provider payload (for debugging, never exposed to clients)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -215,6 +238,42 @@ model CalendarEvent {
   @@unique([connectionId, externalId])
   @@index([connectionId, startAt])
   @@map("calendar_events")
+}
+
+// Tracks OAuth state tokens during the authorization flow (PKCE)
+model OAuthState {
+  id             String   @id @default(uuid())
+  userId         String
+  provider       CalendarProvider
+  state          String   @unique // random state token
+  codeVerifier   String   // PKCE verifier (stored server-side)
+  redirectUri    String
+  expiresAt      DateTime
+  usedAt         DateTime?
+  createdAt      DateTime @default(now())
+
+  @@index([state])
+  @@index([userId])
+  @@map("oauth_states")
+}
+
+// Audit trail for calendar sync operations
+model CalendarSyncAttempt {
+  id             String       @id @default(uuid())
+  connectionId   String
+  status         SyncStatus
+  eventsAdded    Int          @default(0)
+  eventsUpdated  Int          @default(0)
+  eventsRemoved  Int          @default(0)
+  errorMessage   String?
+  durationMs     Int?
+  triggeredBy    String       @default("scheduler") // "scheduler" | "user" | "connection"
+  createdAt      DateTime     @default(now())
+
+  connection CalendarConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@index([connectionId, createdAt])
+  @@map("calendar_sync_attempts")
 }
 
 // ─── Concierge Chat ───────────────────────────────────────────────────────────

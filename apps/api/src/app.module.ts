@@ -7,8 +7,10 @@ import { APP_GUARD } from '@nestjs/core';
 
 import configuration from './config/configuration';
 import { PrismaModule } from './prisma/prisma.module';
+import { EncryptionModule } from './common/encryption/encryption.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AiModule } from './modules/ai/ai.module';
+import { CalendarModule } from './modules/calendar/calendar.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from './modules/auth/guards/roles.guard';
 import { HealthController } from './health/health.controller';
@@ -44,9 +46,13 @@ import { HealthController } from './health/health.controller';
     // Database
     PrismaModule,
 
+    // Security infrastructure (global — available in all modules)
+    EncryptionModule,
+
     // Feature modules
     AuthModule,
     AiModule,
+    CalendarModule,
   ],
   controllers: [HealthController],
   providers: [
