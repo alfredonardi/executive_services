@@ -11,6 +11,7 @@ import { EncryptionModule } from './common/encryption/encryption.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AiModule } from './modules/ai/ai.module';
 import { CalendarModule } from './modules/calendar/calendar.module';
+import { RecommendationModule } from './modules/recommendation/recommendation.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from './modules/auth/guards/roles.guard';
 import { HealthController } from './health/health.controller';
@@ -53,6 +54,7 @@ import { HealthController } from './health/health.controller';
     AuthModule,
     AiModule,
     CalendarModule,
+    RecommendationModule,
   ],
   controllers: [HealthController],
   providers: [
