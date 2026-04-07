@@ -97,6 +97,8 @@ enum AuditAction {
   CALENDAR_SYNC_FAILED
   CALENDAR_TOKEN_REFRESHED
   CALENDAR_TOKEN_REFRESH_FAILED
+  RECOMMENDATION_REQUESTED
+  PREFERENCE_PROFILE_UPDATED
 }
 
 enum SyncStatus {
@@ -136,18 +138,21 @@ model User {
   deletedAt DateTime?
 
   // Relations
-  calendarConnections CalendarConnection[]
-  conversations       Conversation[]
-  requests            ConciergeRequest[]
-  notifications       Notification[]
-  invitations         Invitation[]         @relation("InvitedBy")
-  refreshTokens       RefreshToken[]
-  userInteractions    UserInteraction[]
-  auditLogs           AuditLog[]           @relation("AuditSubject")
-  agentRequests       ConciergeRequest[]   @relation("AssignedAgent")
-  agentConversations  Conversation[]       @relation("AssignedAgent")
-  agentMessages       Message[]            @relation("AgentMessages")
-  pushTokens          PushToken[]
+  calendarConnections      CalendarConnection[]
+  conversations            Conversation[]
+  requests                 ConciergeRequest[]
+  notifications            Notification[]
+  invitations              Invitation[]           @relation("InvitedBy")
+  refreshTokens            RefreshToken[]
+  userInteractions         UserInteraction[]
+  auditLogs                AuditLog[]             @relation("AuditSubject")
+  agentRequests            ConciergeRequest[]     @relation("AssignedAgent")
+  agentConversations       Conversation[]         @relation("AssignedAgent")
+  agentMessages            Message[]              @relation("AgentMessages")
+  pushTokens               PushToken[]
+  preferenceProfile        PreferenceProfile?
+  recommendationSessions   RecommendationSession[]
+  recommendationFeedbacks  RecommendationFeedback[]
 
   @@index([email])
   @@index([role, status])
@@ -349,6 +354,10 @@ model Recommendation {
   latitude        Float?
   longitude       Float?
   durationMinutes Int?
+  minDurationMinutes  Int    @default(20)
+  sourceType          String @default("SEED")
+  premiumScore        Int    @default(3)
+  suitableWindows     String[]
   priceLevel      Int                    @default(2) // 1-4
   tags            String[]
   imageUrl        String?
@@ -477,4 +486,62 @@ model AuditLog {
   @@index([subjectId, createdAt])
   @@index([action, createdAt])
   @@map("audit_logs")
+}
+
+// ─── Recommendation Personalization ──────────────────────────────────────────
+
+model PreferenceProfile {
+  id                     String                   @id @default(uuid())
+  userId                 String                   @unique
+  foodPreferences        String[]
+  dietaryConstraints     String[]
+  atmospherePreferences  String[]
+  preferredCategories    RecommendationCategory[]
+  dislikedCategories     RecommendationCategory[]
+  preferredDurationMin   Int                      @default(30)
+  preferredDurationMax   Int                      @default(90)
+  mobilityTolerance      String                   @default("moderate")
+  preferredNeighborhoods String[]
+  pacing                 String                   @default("efficient")
+  wellnessInterest       Boolean                  @default(false)
+  businessTravelStyle    String                   @default("premium")
+  additionalNotes        String?
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("preference_profiles")
+}
+
+model RecommendationSession {
+  id              String   @id @default(uuid())
+  userId          String
+  windowStart     DateTime
+  windowEnd       DateTime
+  contextSnapshot Json
+  resultsSnapshot Json
+  requestedAt     DateTime @default(now())
+
+  user      User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  feedbacks RecommendationFeedback[]
+
+  @@index([userId, requestedAt])
+  @@map("recommendation_sessions")
+}
+
+model RecommendationFeedback {
+  id            String   @id @default(uuid())
+  sessionId     String
+  userId        String
+  catalogItemId String
+  action        String
+  reason        String?
+  createdAt     DateTime @default(now())
+
+  session RecommendationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user    User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, catalogItemId])
+  @@map("recommendation_feedbacks")
 }
