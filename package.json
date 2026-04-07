@@ -1,0 +1,38 @@
+{
+  "name": "executive-concierge-sp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Premium digital concierge app for foreign executives in São Paulo",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "test:unit": "turbo run test:unit",
+    "test:integration": "turbo run test:integration",
+    "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,json,md}\"",
+    "db:generate": "turbo run db:generate --filter=@executive/api",
+    "db:migrate": "turbo run db:migrate --filter=@executive/api",
+    "db:studio": "turbo run db:studio --filter=@executive/api",
+    "clean": "turbo run clean"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3",
+    "turbo": "^2.3.3",
+    "typescript": "^5.6.3"
+  },
+  "overrides": {
+    "lodash": "^4.18.1",
+    "@xmldom/xmldom": "^0.8.12"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "packageManager": "npm@10.9.0"
+}
