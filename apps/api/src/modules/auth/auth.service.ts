@@ -277,7 +277,7 @@ export class AuthService {
           action: data.action as never,
           ipAddress: data.ipAddress,
           userAgent: data.userAgent,
-          metadata: data.metadata,
+          metadata: data.metadata as never,
         },
       });
     } catch (error) {
