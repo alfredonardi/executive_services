@@ -100,6 +100,9 @@ export class ScheduleContextService {
 
     const boundaries: Date[] = [dayStart, ...merged.flatMap((w) => [w.start, w.end]), dayEnd];
 
+    // `boundaries` alternates between free-window start and free-window end:
+    // [dayStart, meeting1.start, meeting1.end, meeting2.start, meeting2.end, dayEnd]
+    // Pairs at even indices (0,1), (2,3), (4,5) are the FREE periods — step by 2.
     for (let i = 0; i < boundaries.length - 1; i += 2) {
       const start: Date | undefined = boundaries[i];
       const end: Date | undefined = boundaries[i + 1];
