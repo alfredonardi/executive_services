@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { AiModule } from '../ai/ai.module';
+import { CalendarModule } from '../calendar/calendar.module';
 import { ConversationService } from './services/conversation.service';
 import { MessageService } from './services/message.service';
 import { ConciergeRequestService } from './services/concierge-request.service';
@@ -8,16 +9,19 @@ import { RequestWorkflowService } from './services/request-workflow.service';
 import { HandoffService } from './services/handoff.service';
 import { NotificationService } from './services/notification.service';
 import { AiAssistantService } from './services/ai-assistant.service';
+import { ContextAssemblyService } from './services/context-assembly.service';
 import { ConversationController } from './controllers/conversation.controller';
 import { ConciergeRequestController } from './controllers/concierge-request.controller';
 import { NotificationController } from './controllers/notification.controller';
+import { AdminConversationController } from './controllers/admin-conversation.controller';
 
 @Module({
-  imports: [PrismaModule, AiModule],
+  imports: [PrismaModule, AiModule, CalendarModule],
   controllers: [
     ConversationController,
     ConciergeRequestController,
     NotificationController,
+    AdminConversationController,
   ],
   providers: [
     ConversationService,
@@ -27,6 +31,7 @@ import { NotificationController } from './controllers/notification.controller';
     HandoffService,
     NotificationService,
     AiAssistantService,
+    ContextAssemblyService,
   ],
   exports: [NotificationService, ConversationService, ConciergeRequestService],
 })
