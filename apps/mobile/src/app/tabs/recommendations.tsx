@@ -13,6 +13,7 @@ import {
   Platform,
 } from 'react-native';
 import { Colors, Typography, Spacing } from '../../theme/tokens';
+import { ShellHeaderActions } from '../../components/shell-header-actions';
 import {
   recommendationService,
   type RecommendationResult,
@@ -130,12 +131,17 @@ export default function RecommendationsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>For You</Text>
-        <Text style={styles.headerSubtitle}>
-          {response
-            ? `Curated for today's schedule · ${response.scheduleDensity} day`
-            : 'Curated for today's schedule'}
-        </Text>
+        <View style={styles.headerTopRow}>
+          <View style={styles.headerCopy}>
+            <Text style={styles.headerTitle}>For You</Text>
+            <Text style={styles.headerSubtitle}>
+              {response
+                ? `Curated for today's schedule · ${response.scheduleDensity} day`
+                : "Curated for today's schedule"}
+            </Text>
+          </View>
+          <ShellHeaderActions />
+        </View>
       </View>
 
       {isLoading && (
@@ -444,6 +450,15 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing[4],
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
+  },
+  headerTopRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: Spacing[4],
+  },
+  headerCopy: {
+    flex: 1,
   },
   headerTitle: {
     fontSize: Typography.fontSize['2xl'],

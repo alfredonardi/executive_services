@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CalendarProvider } from '@prisma/client';
-import { IsEnum, IsISO8601, IsOptional, IsPositive, Max } from 'class-validator';
+import { IsEnum, IsISO8601, IsOptional, IsPositive, IsString, Max } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class GetEventsQueryDto {
@@ -91,6 +91,17 @@ export class ConnectCalendarResponseDto {
 
   @ApiProperty({ description: 'Opaque state token. The mobile app must include this in the callback URL to prevent CSRF.' })
   state!: string;
+}
+
+export class InitiateCalendarConnectionDto {
+  @ApiPropertyOptional({
+    description:
+      'Optional mobile redirect URI override. Useful for deep-link based native OAuth handoff.',
+    example: 'executive-concierge://calendar/google',
+  })
+  @IsOptional()
+  @IsString()
+  redirectUri?: string;
 }
 
 export class SyncStatusResponseDto {

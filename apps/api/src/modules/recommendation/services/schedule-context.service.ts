@@ -10,6 +10,12 @@ interface RawEvent {
   isCancelled: boolean;
 }
 
+interface DeriveContextOptions {
+  dayStart?: Date;
+  dayEnd?: Date;
+  now?: Date;
+}
+
 @Injectable()
 export class ScheduleContextService {
   private readonly logger = new Logger(ScheduleContextService.name);
@@ -20,12 +26,11 @@ export class ScheduleContextService {
     userId: string,
     referenceDate: Date,
     timezone: string = 'America/Sao_Paulo',
+    options: DeriveContextOptions = {},
   ): Promise<ScheduleContext> {
-    // Define the day window: midnight to 23:59:59 in the target day
-    const dayStart = new Date(referenceDate);
-    dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(referenceDate);
-    dayEnd.setHours(23, 59, 59, 999);
+    const fallbackBounds = this.getDayBounds(referenceDate, timezone);
+    const dayStart = options.dayStart ?? fallbackBounds.dayStart;
+    const dayEnd = options.dayEnd ?? fallbackBounds.dayEnd;
 
     const rawEvents = await this.calendarEventService.getUpcomingEvents({
       userId,
@@ -42,7 +47,7 @@ export class ScheduleContextService {
     );
 
     const occupiedWindows = this.buildOccupiedWindows(relevantEvents);
-    const freeWindows = this.buildFreeWindows(occupiedWindows, dayStart, dayEnd);
+    const freeWindows = this.buildFreeWindows(occupiedWindows, dayStart, dayEnd, timezone);
     const opportunityWindows = this.identifyOpportunityWindows(freeWindows, occupiedWindows);
 
     const meetingCount = relevantEvents.length;
@@ -52,7 +57,7 @@ export class ScheduleContextService {
     const hasMealOpportunity = freeWindows.some((w) => w.type === 'MEAL_OPPORTUNITY');
     const hasEveningFree = freeWindows.some((w) => w.type === 'EVENING_FREE');
 
-    const now = new Date();
+    const now = options.now ?? new Date();
     const nextMeeting = relevantEvents.find((e) => e.startAt > now);
     const lastMeeting =
       relevantEvents.length > 0 ? relevantEvents[relevantEvents.length - 1] : null;
@@ -92,6 +97,7 @@ export class ScheduleContextService {
     occupiedWindows: TimeWindow[],
     dayStart: Date,
     dayEnd: Date,
+    timezone: string,
   ): TimeWindow[] {
     const freeWindows: TimeWindow[] = [];
 
@@ -122,7 +128,7 @@ export class ScheduleContextService {
       const durationMinutes = Math.round((end.getTime() - start.getTime()) / 60_000);
       if (durationMinutes < 5) continue; // ignore very tiny gaps
 
-      const type = this.classifyFreeWindow(start, end, durationMinutes);
+      const type = this.classifyFreeWindow(start, end, durationMinutes, timezone);
       freeWindows.push({
         start,
         end,
@@ -160,9 +166,14 @@ export class ScheduleContextService {
     return merged;
   }
 
-  private classifyFreeWindow(start: Date, end: Date, durationMinutes: number): WindowType {
-    const startHour = start.getHours() + start.getMinutes() / 60;
-    const endHour = end.getHours() + end.getMinutes() / 60;
+  private classifyFreeWindow(
+    start: Date,
+    end: Date,
+    durationMinutes: number,
+    timezone: string,
+  ): WindowType {
+    const startHour = this.getHourInTimezone(start, timezone);
+    const endHour = this.getHourInTimezone(end, timezone);
 
     // Morning start: before 09:00 with >= 30 min
     if (startHour < 9 && durationMinutes >= 30) {
@@ -234,5 +245,75 @@ export class ScheduleContextService {
 
     const combined = [...new Set([...opportunities, ...postMeeting])];
     return combined;
+  }
+
+  private getHourInTimezone(date: Date, timezone: string): number {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).formatToParts(date);
+    const partMap = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+    return Number(partMap['hour']) + Number(partMap['minute']) / 60;
+  }
+
+  private getDayBounds(referenceDate: Date, timezone: string) {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(referenceDate);
+    const partMap = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+    const year = Number(partMap['year']);
+    const month = Number(partMap['month']);
+    const day = Number(partMap['day']);
+
+    return {
+      dayStart: this.zonedDateTimeToUtc(year, month, day, 0, 0, 0, 0, timezone),
+      dayEnd: this.zonedDateTimeToUtc(year, month, day, 23, 59, 59, 999, timezone),
+    };
+  }
+
+  private zonedDateTimeToUtc(
+    year: number,
+    month: number,
+    day: number,
+    hour: number,
+    minute: number,
+    second: number,
+    millisecond: number,
+    timezone: string,
+  ): Date {
+    const utcGuess = new Date(Date.UTC(year, month - 1, day, hour, minute, second, millisecond));
+    const offset = this.getTimeZoneOffsetMs(utcGuess, timezone);
+    return new Date(utcGuess.getTime() - offset);
+  }
+
+  private getTimeZoneOffsetMs(date: Date, timezone: string): number {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    }).formatToParts(date);
+    const partMap = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+
+    const asUtc = Date.UTC(
+      Number(partMap['year']),
+      Number(partMap['month']) - 1,
+      Number(partMap['day']),
+      Number(partMap['hour']),
+      Number(partMap['minute']),
+      Number(partMap['second']),
+      date.getUTCMilliseconds(),
+    );
+
+    return asUtc - date.getTime();
   }
 }

@@ -21,9 +21,9 @@ All endpoints require `Authorization: Bearer <access_token>` (JWT from login).
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/api/v1/calendar/connections` | List active calendar connections |
-| `POST` | `/api/v1/calendar/google/connect` | Initiate Google Calendar OAuth |
+| `POST` | `/api/v1/calendar/google/connect` | Initiate Google Calendar OAuth (`{ redirectUri? }` supported for mobile deep links) |
 | `GET` | `/api/v1/calendar/google/callback` | Google OAuth callback (redirect) |
-| `POST` | `/api/v1/calendar/microsoft/connect` | Initiate Microsoft Calendar OAuth |
+| `POST` | `/api/v1/calendar/microsoft/connect` | Initiate Microsoft Calendar OAuth (`{ redirectUri? }` supported for mobile deep links) |
 | `GET` | `/api/v1/calendar/microsoft/callback` | Microsoft OAuth callback (redirect) |
 | `DELETE` | `/api/v1/calendar/connections/:id` | Disconnect a calendar |
 
@@ -51,7 +51,7 @@ Query params: `from` (ISO 8601), `to` (ISO 8601), `limit` (max 200), `provider` 
 ```
 Mobile App                   API                      Google/Microsoft
     │                         │                               │
-    │  POST /calendar/google/connect                          │
+    │  POST /calendar/google/connect { redirectUri }          │
     │ ────────────────────────►                               │
     │                         │  Creates OAuthState (PKCE)   │
     │  { authorizationUrl, state }                            │
@@ -65,7 +65,7 @@ Mobile App                   API                      Google/Microsoft
     │                         │  Redirect to callback URL     │
     │                         │ ◄─────────────────────────────│
     │                         │                               │
-    │  callback delivers code+state to app via deep link      │
+    │  callback returns code+state to the app via deep link   │
     │                         │                               │
     │  App calls /calendar/google/callback?code=...&state=... │
     │ ────────────────────────►                               │
@@ -73,9 +73,11 @@ Mobile App                   API                      Google/Microsoft
     │                         │  Exchanges code (PKCE verify) │
     │                         │  Fetches account info         │
     │                         │  Stores encrypted tokens      │
-    │                         │  Triggers initial sync        │
     │  { connectionId, provider, email }                      │
     │ ◄────────────────────────                               │
+    │                         │                               │
+    │  POST /calendar/connections/:id/sync                    │
+    │ ────────────────────────►                               │
 ```
 
 ### PKCE Details

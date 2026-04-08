@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Delete,
   Get,
@@ -31,6 +32,7 @@ import {
   CalendarEventResponseDto,
   ConnectCalendarResponseDto,
   FilterEventsQueryDto,
+  InitiateCalendarConnectionDto,
   SyncStatusResponseDto,
   TriggerSyncResponseDto,
 } from './dto/calendar.dto';
@@ -84,8 +86,15 @@ export class CalendarController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Initiate Google Calendar OAuth connection' })
   @ApiResponse({ status: 200, type: ConnectCalendarResponseDto })
-  connectGoogle(@CurrentUser('id') userId: string): Promise<ConnectCalendarResponseDto> {
-    return this.connectionService.initiateConnection(userId, CalendarProvider.GOOGLE);
+  connectGoogle(
+    @CurrentUser('id') userId: string,
+    @Body() dto: InitiateCalendarConnectionDto,
+  ): Promise<ConnectCalendarResponseDto> {
+    return this.connectionService.initiateConnection(
+      userId,
+      CalendarProvider.GOOGLE,
+      dto.redirectUri,
+    );
   }
 
   @Get('google/callback')
@@ -119,8 +128,15 @@ export class CalendarController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Initiate Microsoft Calendar OAuth connection' })
   @ApiResponse({ status: 200, type: ConnectCalendarResponseDto })
-  connectMicrosoft(@CurrentUser('id') userId: string): Promise<ConnectCalendarResponseDto> {
-    return this.connectionService.initiateConnection(userId, CalendarProvider.MICROSOFT);
+  connectMicrosoft(
+    @CurrentUser('id') userId: string,
+    @Body() dto: InitiateCalendarConnectionDto,
+  ): Promise<ConnectCalendarResponseDto> {
+    return this.connectionService.initiateConnection(
+      userId,
+      CalendarProvider.MICROSOFT,
+      dto.redirectUri,
+    );
   }
 
   @Get('microsoft/callback')

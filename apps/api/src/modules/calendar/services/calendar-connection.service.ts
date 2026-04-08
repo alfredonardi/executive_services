@@ -58,8 +58,12 @@ export class CalendarConnectionService {
    * Step 1 of OAuth: Generate an authorization URL for the user to visit.
    * Creates an OAuthState record with the PKCE verifier stored server-side.
    */
-  async initiateConnection(userId: string, provider: CalendarProvider) {
-    const redirectUri = this.getRedirectUri(provider);
+  async initiateConnection(
+    userId: string,
+    provider: CalendarProvider,
+    redirectUriOverride?: string,
+  ) {
+    const redirectUri = redirectUriOverride || this.getRedirectUri(provider);
 
     // Ensure no active connection already exists for this provider
     const existing = await this.prisma.calendarConnection.findUnique({
@@ -84,7 +88,7 @@ export class CalendarConnectionService {
       data: { userId, provider, state, codeVerifier, redirectUri, expiresAt },
     });
 
-    const authorizationUrl = this.providers[provider].getAuthorizationUrl(
+    const authorizationUrl = this.getProvider(provider).getAuthorizationUrl(
       state,
       codeChallenge,
       redirectUri,
@@ -122,7 +126,7 @@ export class CalendarConnectionService {
       data: { usedAt: new Date() },
     });
 
-    const providerAdapter = this.providers[provider];
+    const providerAdapter = this.getProvider(provider);
     const tokenResponse = await providerAdapter.exchangeCodeForTokens(
       code,
       oauthState.codeVerifier,
@@ -251,7 +255,7 @@ export class CalendarConnectionService {
     refreshToken: string;
     userId: string;
   }): Promise<string> {
-    const provider = this.providers[connection.provider];
+    const provider = this.getProvider(connection.provider);
     const decryptedRefresh = this.encryption.decrypt(connection.refreshToken);
 
     let tokenResponse: TokenResponse;
@@ -367,6 +371,14 @@ export class CalendarConnectionService {
       return this.config.get<string>('google.redirectUri') ?? '';
     }
     return this.config.get<string>('microsoft.redirectUri') ?? '';
+  }
+
+  private getProvider(provider: CalendarProvider): ICalendarProvider {
+    const adapter = this.providers[provider];
+    if (!adapter) {
+      throw new BadRequestException(`Calendar provider ${provider} is not configured`);
+    }
+    return adapter;
   }
 
   // ─── Audit ─────────────────────────────────────────────────────────────────

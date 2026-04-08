@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Colors, Typography, Spacing } from '../../theme/tokens';
+import { ShellHeaderActions } from '../../components/shell-header-actions';
 import {
   conciergeService,
   type ApiMessage,
@@ -145,9 +146,14 @@ export default function ConciergeScreen() {
     >
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Concierge</Text>
-        <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-        <Text style={styles.headerStatus}>{statusLabel}</Text>
+        <View style={styles.headerTopRow}>
+          <Text style={styles.headerTitle}>Concierge</Text>
+          <ShellHeaderActions />
+        </View>
+        <View style={styles.headerStatusRow}>
+          <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+          <Text style={styles.headerStatus}>{statusLabel}</Text>
+        </View>
       </View>
 
       {/* Error banner */}
@@ -282,8 +288,6 @@ const styles = StyleSheet.create({
     color: Colors.gray,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingTop: 60,
     paddingHorizontal: Spacing[6],
     paddingBottom: Spacing[4],
@@ -295,6 +299,17 @@ const styles = StyleSheet.create({
     fontWeight: Typography.fontWeight.light,
     color: Colors.white,
     flex: 1,
+  },
+  headerTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing[4],
+  },
+  headerStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: Spacing[3],
   },
   statusDot: {
     width: 8,

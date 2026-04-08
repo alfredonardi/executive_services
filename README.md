@@ -91,6 +91,7 @@ npx expo start
 | [MVP_SCOPE.md](MVP_SCOPE.md) | MVP features, user stories, flows |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Technical architecture, modules |
 | [ROADMAP.md](ROADMAP.md) | Implementation phases and plan |
+| [docs/EXECUTIVE-APP-SHELL.md](docs/EXECUTIVE-APP-SHELL.md) | Prompt 6 executive shell flows and Prompt 7 boundary |
 | [docs/adr/](docs/adr/) | Architectural Decision Records |
 
 ---
@@ -141,6 +142,6 @@ npm run test:unit       # Unit tests
 
 ---
 
-## Status: Phase 0 — Foundation ✓
+## Status
 
-See [ROADMAP.md](ROADMAP.md) for what's next.
+The codebase now includes live executive-facing concierge chat, recommendations, requests, notifications, settings, calendar connection UX, and a real Today tab. See [docs/EXECUTIVE-APP-SHELL.md](docs/EXECUTIVE-APP-SHELL.md) for the current shell state and the suggested Prompt 7 follow-on work.

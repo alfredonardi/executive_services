@@ -13,6 +13,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Colors, Typography, Spacing } from '../../theme/tokens';
+import { ShellHeaderActions } from '../../components/shell-header-actions';
 import {
   requestService,
   type ApiRequest,
@@ -93,9 +94,12 @@ export default function RequestsScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Requests</Text>
+        <View style={styles.headerTopRow}>
+          <Text style={styles.headerTitle}>Requests</Text>
+          <ShellHeaderActions />
+        </View>
         <TouchableOpacity style={styles.newButton} onPress={() => setCreateVisible(true)}>
-          <Text style={styles.newButtonText}>+ New</Text>
+          <Text style={styles.newButtonText}>+ New request</Text>
         </TouchableOpacity>
       </View>
 
@@ -445,8 +449,6 @@ const styles = StyleSheet.create({
   loadingText: { marginTop: Spacing[3], fontSize: Typography.fontSize.sm, color: Colors.gray },
 
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingTop: 60,
     paddingHorizontal: Spacing[6],
     paddingBottom: Spacing[4],
@@ -459,11 +461,19 @@ const styles = StyleSheet.create({
     fontWeight: Typography.fontWeight.light,
     color: Colors.white,
   },
+  headerTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing[4],
+  },
   newButton: {
+    alignSelf: 'flex-start',
     backgroundColor: Colors.gold,
     borderRadius: 6,
     paddingHorizontal: Spacing[4],
     paddingVertical: Spacing[2],
+    marginTop: Spacing[4],
   },
   newButtonText: {
     fontSize: Typography.fontSize.sm,

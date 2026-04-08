@@ -53,8 +53,8 @@ export class CalendarEventService {
     const events = await this.prisma.calendarEvent.findMany({
       where: {
         connectionId: { in: connectionIds },
-        startAt: { gte: from },
-        endAt: { lte: to },
+        startAt: { lte: to },
+        endAt: { gte: from },
         isCancelled: false,
       },
       select: {

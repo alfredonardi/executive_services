@@ -168,6 +168,13 @@ Notifications are persisted in the `Notification` table. They are available via 
 - "Save" → `POST /recommendations/feedback { action: 'SAVED' }` → confirmation shown
 - "Dismiss" → `POST /recommendations/feedback { action: 'DISMISSED' }` → card removed
 
+### Notifications screen (`notifications.tsx`)
+- Loads persisted notifications from `GET /notifications`
+- Unread items are visually differentiated and reflected in the bell indicator
+- Tap an unread notification → `PATCH /notifications/:id/read`
+- "Mark all read" → `POST /notifications/read-all`
+- This is still in-app only; push delivery remains out of scope for Phase 6
+
 ---
 
 ## Admin interface

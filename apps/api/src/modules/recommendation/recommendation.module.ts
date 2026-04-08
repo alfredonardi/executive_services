@@ -24,6 +24,6 @@ import { RecommendationFeedbackService } from './services/recommendation-feedbac
     RecommendationExplanationService,
     RecommendationFeedbackService,
   ],
-  exports: [RecommendationService],
+  exports: [RecommendationService, ScheduleContextService, PreferenceProfileService],
 })
 export class RecommendationModule {}

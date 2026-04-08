@@ -30,6 +30,7 @@ describe('ScheduleContextService', () => {
   let calendarEventService: jest.Mocked<CalendarEventService>;
 
   const referenceDate = new Date('2026-04-07T00:00:00Z');
+  const referenceTimezone = 'UTC';
 
   beforeEach(async () => {
     const mockCalendarEventService = {
@@ -56,7 +57,7 @@ describe('ScheduleContextService', () => {
         makeEvent('2026-04-07T12:00:00Z', '2026-04-07T18:00:00Z'),
       ]);
 
-      const ctx = await service.deriveContext('user-1', referenceDate);
+      const ctx = await service.deriveContext('user-1', referenceDate, referenceTimezone);
       // Very tight day — free windows only outside 08-18 band
       const nonTrivialFree = ctx.freeWindows.filter((w) => w.durationMinutes >= 30);
       // Before 08:00 = 480 min and after 18:00 = 359 min are free
@@ -69,14 +70,14 @@ describe('ScheduleContextService', () => {
         makeEvent('2026-04-07T13:00:00Z', '2026-04-07T14:00:00Z'),
       ]);
 
-      const ctx = await service.deriveContext('user-1', referenceDate);
+      const ctx = await service.deriveContext('user-1', referenceDate, referenceTimezone);
       const gaps = ctx.freeWindows.filter((w) => w.durationMinutes >= 30);
       expect(gaps.length).toBeGreaterThan(0);
     });
 
     it('should return large free windows with no events', async () => {
       calendarEventService.getUpcomingEvents.mockResolvedValue([]);
-      const ctx = await service.deriveContext('user-1', referenceDate);
+      const ctx = await service.deriveContext('user-1', referenceDate, referenceTimezone);
       expect(ctx.freeWindows.length).toBeGreaterThan(0);
       expect(ctx.freeWindows[0]!.durationMinutes).toBeGreaterThan(60);
     });
@@ -85,7 +86,7 @@ describe('ScheduleContextService', () => {
       calendarEventService.getUpcomingEvents.mockResolvedValue([
         makeEvent('2026-04-07T00:00:00Z', '2026-04-07T23:59:59Z', true),
       ]);
-      const ctx = await service.deriveContext('user-1', referenceDate);
+      const ctx = await service.deriveContext('user-1', referenceDate, referenceTimezone);
       expect(ctx.occupiedWindows.length).toBe(0);
     });
 
@@ -93,7 +94,7 @@ describe('ScheduleContextService', () => {
       calendarEventService.getUpcomingEvents.mockResolvedValue([
         makeEvent('2026-04-07T10:00:00Z', '2026-04-07T11:00:00Z', false, true),
       ]);
-      const ctx = await service.deriveContext('user-1', referenceDate);
+      const ctx = await service.deriveContext('user-1', referenceDate, referenceTimezone);
       expect(ctx.occupiedWindows.length).toBe(0);
     });
   });
@@ -107,7 +108,7 @@ describe('ScheduleContextService', () => {
         makeEvent('2026-04-07T13:30:00Z', '2026-04-07T15:00:00Z'),
       ]);
 
-      const ctx = await service.deriveContext('user-1', referenceDate);
+      const ctx = await service.deriveContext('user-1', referenceDate, referenceTimezone);
       expect(ctx.hasMealOpportunity).toBe(true);
     });
 
@@ -118,7 +119,7 @@ describe('ScheduleContextService', () => {
         makeEvent('2026-04-07T12:20:00Z', '2026-04-07T15:00:00Z'),
       ]);
 
-      const ctx = await service.deriveContext('user-1', referenceDate);
+      const ctx = await service.deriveContext('user-1', referenceDate, referenceTimezone);
       expect(ctx.hasMealOpportunity).toBe(false);
     });
 
@@ -127,7 +128,7 @@ describe('ScheduleContextService', () => {
         makeEvent('2026-04-07T09:00:00Z', '2026-04-07T19:30:00Z'),
       ]);
 
-      const ctx = await service.deriveContext('user-1', referenceDate);
+      const ctx = await service.deriveContext('user-1', referenceDate, referenceTimezone);
       expect(ctx.hasEveningFree).toBe(true);
     });
   });
@@ -137,7 +138,7 @@ describe('ScheduleContextService', () => {
   describe('schedule density calculation', () => {
     it('should be low with 0 meetings', async () => {
       calendarEventService.getUpcomingEvents.mockResolvedValue([]);
-      const ctx = await service.deriveContext('user-1', referenceDate);
+      const ctx = await service.deriveContext('user-1', referenceDate, referenceTimezone);
       expect(ctx.scheduleDensity).toBe('low');
     });
 
@@ -145,7 +146,7 @@ describe('ScheduleContextService', () => {
       calendarEventService.getUpcomingEvents.mockResolvedValue([
         makeEvent('2026-04-07T10:00:00Z', '2026-04-07T11:00:00Z'),
       ]);
-      const ctx = await service.deriveContext('user-1', referenceDate);
+      const ctx = await service.deriveContext('user-1', referenceDate, referenceTimezone);
       expect(ctx.scheduleDensity).toBe('low');
     });
 
@@ -155,7 +156,7 @@ describe('ScheduleContextService', () => {
         makeEvent('2026-04-07T11:00:00Z', '2026-04-07T12:00:00Z'),
         makeEvent('2026-04-07T14:00:00Z', '2026-04-07T15:00:00Z'),
       ]);
-      const ctx = await service.deriveContext('user-1', referenceDate);
+      const ctx = await service.deriveContext('user-1', referenceDate, referenceTimezone);
       expect(ctx.scheduleDensity).toBe('moderate');
     });
 
@@ -167,7 +168,7 @@ describe('ScheduleContextService', () => {
         makeEvent('2026-04-07T11:00:00Z', '2026-04-07T12:00:00Z'),
         makeEvent('2026-04-07T13:00:00Z', '2026-04-07T14:00:00Z'),
       ]);
-      const ctx = await service.deriveContext('user-1', referenceDate);
+      const ctx = await service.deriveContext('user-1', referenceDate, referenceTimezone);
       expect(ctx.scheduleDensity).toBe('high');
       expect(ctx.isPrimaryWorkDay).toBe(true);
     });
@@ -182,7 +183,7 @@ describe('ScheduleContextService', () => {
         makeEvent('2026-04-07T11:30:00Z', '2026-04-07T12:30:00Z'),
       ]);
 
-      const ctx = await service.deriveContext('user-1', referenceDate);
+      const ctx = await service.deriveContext('user-1', referenceDate, referenceTimezone);
       // Gap between 10:00 and 11:30 = 90 min — should be an opportunity window
       const has90MinOpportunity = ctx.opportunityWindows.some((w) => w.durationMinutes >= 45);
       expect(has90MinOpportunity).toBe(true);
@@ -217,7 +218,7 @@ describe('ScheduleContextService', () => {
         makeEvent('2026-04-07T23:00:00Z', '2026-04-07T23:40:00Z'),
       ]);
 
-      const ctx = await service.deriveContext('user-1', referenceDate);
+      const ctx = await service.deriveContext('user-1', referenceDate, referenceTimezone);
       // All gaps between meetings are 20 min — below the 45-min threshold
       // The entire day is covered so no large early/late windows exist either
       const bigOpportunities = ctx.opportunityWindows.filter((w) => w.durationMinutes >= 45);
@@ -226,10 +227,14 @@ describe('ScheduleContextService', () => {
 
     it('should populate context fields correctly', async () => {
       calendarEventService.getUpcomingEvents.mockResolvedValue([]);
-      const ctx: ScheduleContext = await service.deriveContext('user-1', referenceDate);
+      const ctx: ScheduleContext = await service.deriveContext(
+        'user-1',
+        referenceDate,
+        referenceTimezone,
+      );
 
       expect(ctx.userId).toBe('user-1');
-      expect(ctx.timezone).toBe('America/Sao_Paulo');
+      expect(ctx.timezone).toBe(referenceTimezone);
       expect(ctx.nextMeetingStartsAt).toBeNull();
       expect(ctx.lastMeetingEndsAt).toBeNull();
       expect(ctx.isPrimaryWorkDay).toBe(false);

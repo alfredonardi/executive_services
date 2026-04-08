@@ -6,6 +6,49 @@ export interface RecommendationReason {
   detail?: string;
 }
 
+export type RecommendationCategory =
+  | 'RESTAURANT'
+  | 'WELLNESS'
+  | 'SHORT_EXPERIENCE'
+  | 'BUSINESS_SUPPORT'
+  | 'MICRO_EXPERIENCE';
+
+export interface PreferenceProfile {
+  id: string;
+  userId: string;
+  foodPreferences: string[];
+  dietaryConstraints: string[];
+  atmospherePreferences: string[];
+  preferredCategories: RecommendationCategory[];
+  dislikedCategories: RecommendationCategory[];
+  preferredDurationMin: number;
+  preferredDurationMax: number;
+  mobilityTolerance: string;
+  preferredNeighborhoods: string[];
+  pacing: string;
+  wellnessInterest: boolean;
+  businessTravelStyle: string;
+  additionalNotes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpsertPreferenceProfileDto {
+  foodPreferences?: string[];
+  dietaryConstraints?: string[];
+  atmospherePreferences?: string[];
+  preferredCategories?: RecommendationCategory[];
+  dislikedCategories?: RecommendationCategory[];
+  preferredDurationMin?: number;
+  preferredDurationMax?: number;
+  mobilityTolerance?: string;
+  preferredNeighborhoods?: string[];
+  pacing?: string;
+  wellnessInterest?: boolean;
+  businessTravelStyle?: string;
+  additionalNotes?: string;
+}
+
 export interface RecommendationResult {
   id: string;
   catalogItemId: string;
@@ -36,6 +79,18 @@ export interface RecommendationResponse {
 export type FeedbackAction = 'SAVED' | 'DISMISSED' | 'ACTED' | 'VIEWED';
 
 export const recommendationService = {
+  async getPreferenceProfile(): Promise<PreferenceProfile | null> {
+    const response = await apiClient.get<PreferenceProfile | null>('/recommendations/profile');
+    return response.data;
+  },
+
+  async upsertPreferenceProfile(
+    dto: UpsertPreferenceProfileDto,
+  ): Promise<PreferenceProfile> {
+    const response = await apiClient.post<PreferenceProfile>('/recommendations/profile', dto);
+    return response.data;
+  },
+
   async getRecommendations(): Promise<RecommendationResponse> {
     const response = await apiClient.get<RecommendationResponse>('/recommendations');
     return response.data;
