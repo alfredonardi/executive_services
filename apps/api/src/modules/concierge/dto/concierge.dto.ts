@@ -9,6 +9,7 @@ import {
   IsUUID,
   MinLength,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 // ─── Conversation ─────────────────────────────────────────────────────────────
 
@@ -243,6 +244,7 @@ export class ConciergeRequestDetailDto extends ConciergeRequestResponseDto {
 export class ListNotificationsQueryDto {
   @ApiPropertyOptional({ description: 'Return only unread notifications' })
   @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
   @IsBoolean()
   unreadOnly?: boolean;
 }
