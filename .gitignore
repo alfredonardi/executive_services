@@ -14,5 +14,6 @@ coverage/
 .DS_Store
 .idea/
 .vscode/
+.claude/
 prisma/generated/
 *.local
