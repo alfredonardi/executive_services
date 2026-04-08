@@ -142,6 +142,7 @@ Notifications are persisted in the `Notification` table. They are available via 
 
 | Event | Type | Title template |
 |-------|------|----------------|
+| Request created | REQUEST_UPDATE | "Request received — {title}" |
 | Request acknowledged | REQUEST_UPDATE | "Request acknowledged — {title}" |
 | Request status changed | REQUEST_UPDATE | "Request update — {title}" |
 | Agent assigned | REQUEST_UPDATE | "Concierge assigned — {title}" |

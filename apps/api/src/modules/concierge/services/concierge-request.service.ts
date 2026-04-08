@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConciergeRequest, RequestStatus, RequestStatusUpdate } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { NotificationService } from './notification.service';
 import {
   CreateConciergeRequestDto,
   CreateRequestFromRecommendationDto,
@@ -8,13 +9,16 @@ import {
 
 @Injectable()
 export class ConciergeRequestService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationService: NotificationService,
+  ) {}
 
   async createRequest(
     userId: string,
     dto: CreateConciergeRequestDto,
   ): Promise<ConciergeRequest & { statusUpdates: RequestStatusUpdate[] }> {
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       const request = await tx.conciergeRequest.create({
         data: {
           userId,
@@ -26,22 +30,27 @@ export class ConciergeRequestService {
           conversationId: dto.conversationId,
           status: RequestStatus.PENDING,
         },
-        include: { statusUpdates: true },
       });
 
-      await tx.requestStatusUpdate.create({
+      const statusUpdate = await tx.requestStatusUpdate.create({
         data: { requestId: request.id, status: RequestStatus.PENDING },
       });
 
-      return { ...request, statusUpdates: [{ requestId: request.id, status: RequestStatus.PENDING, id: '', notes: null, agentId: null, createdAt: new Date() }] };
+      return { ...request, statusUpdates: [statusUpdate] };
     });
+
+    await this.notificationService
+      .notifyRequestCreated(userId, result.id, result.title)
+      .catch(() => undefined);
+
+    return result;
   }
 
   async createFromRecommendation(
     userId: string,
     dto: CreateRequestFromRecommendationDto,
   ): Promise<ConciergeRequest & { statusUpdates: RequestStatusUpdate[] }> {
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       const description = dto.timeWindowContext
         ? `${dto.description}\n\nTime window: ${dto.timeWindowContext}`
         : dto.description;
@@ -56,15 +65,20 @@ export class ConciergeRequestService {
           conversationId: dto.conversationId,
           status: RequestStatus.PENDING,
         },
-        include: { statusUpdates: true },
       });
 
-      await tx.requestStatusUpdate.create({
+      const statusUpdate = await tx.requestStatusUpdate.create({
         data: { requestId: request.id, status: RequestStatus.PENDING },
       });
 
-      return { ...request, statusUpdates: [{ requestId: request.id, status: RequestStatus.PENDING, id: '', notes: null, agentId: null, createdAt: new Date() }] };
+      return { ...request, statusUpdates: [statusUpdate] };
     });
+
+    await this.notificationService
+      .notifyRequestCreated(userId, result.id, result.title)
+      .catch(() => undefined);
+
+    return result;
   }
 
   async listRequests(

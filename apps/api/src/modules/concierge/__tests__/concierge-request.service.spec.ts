@@ -2,7 +2,17 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { RequestStatus } from '@prisma/client';
 import { ConciergeRequestService } from '../services/concierge-request.service';
+import { NotificationService } from '../services/notification.service';
 import { PrismaService } from '../../../prisma/prisma.service';
+
+const mockStatusUpdate = {
+  id: 'su-1',
+  requestId: 'req-1',
+  status: RequestStatus.PENDING,
+  notes: null,
+  agentId: null,
+  createdAt: new Date(),
+};
 
 const mockRequest = {
   id: 'req-1',
@@ -20,12 +30,12 @@ const mockRequest = {
   sourceRecommendationId: null,
   createdAt: new Date(),
   updatedAt: new Date(),
-  statusUpdates: [],
 };
 
 describe('ConciergeRequestService', () => {
   let service: ConciergeRequestService;
   let prisma: jest.Mocked<PrismaService>;
+  let notificationService: jest.Mocked<NotificationService>;
 
   beforeEach(async () => {
     const mockTx = {
@@ -33,7 +43,7 @@ describe('ConciergeRequestService', () => {
         create: jest.fn().mockResolvedValue(mockRequest),
       },
       requestStatusUpdate: {
-        create: jest.fn().mockResolvedValue({}),
+        create: jest.fn().mockResolvedValue(mockStatusUpdate),
       },
     };
 
@@ -45,15 +55,21 @@ describe('ConciergeRequestService', () => {
       $transaction: jest.fn().mockImplementation(async (fn) => fn(mockTx)),
     };
 
+    const mockNotificationService = {
+      notifyRequestCreated: jest.fn().mockResolvedValue(undefined),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ConciergeRequestService,
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: NotificationService, useValue: mockNotificationService },
       ],
     }).compile();
 
     service = module.get<ConciergeRequestService>(ConciergeRequestService);
     prisma = module.get(PrismaService);
+    notificationService = module.get(NotificationService);
   });
 
   describe('createRequest', () => {
@@ -66,6 +82,23 @@ describe('ConciergeRequestService', () => {
       expect(result.status).toBe(RequestStatus.PENDING);
       expect(prisma.$transaction).toHaveBeenCalled();
     });
+
+    it('should return the real status update with a valid id (not empty string)', async () => {
+      const dto = { title: 'Book restaurant', description: 'Need a quiet table for two' };
+      const result = await service.createRequest('user-1', dto as any);
+      expect(result.statusUpdates).toHaveLength(1);
+      expect(result.statusUpdates[0]?.id).toBe('su-1');
+    });
+
+    it('should fire a notifyRequestCreated notification', async () => {
+      const dto = { title: 'Book restaurant', description: 'Need a quiet table for two' };
+      await service.createRequest('user-1', dto as any);
+      expect(notificationService.notifyRequestCreated).toHaveBeenCalledWith(
+        'user-1',
+        'req-1',
+        'Book restaurant',
+      );
+    });
   });
 
   describe('createFromRecommendation', () => {
@@ -76,7 +109,6 @@ describe('ConciergeRequestService', () => {
         description: 'I want to act on this recommendation',
       };
       await service.createFromRecommendation('user-1', dto as any);
-      // Transaction was called
       expect(prisma.$transaction).toHaveBeenCalled();
     });
 
@@ -89,6 +121,30 @@ describe('ConciergeRequestService', () => {
       };
       await service.createFromRecommendation('user-1', dto as any);
       expect(prisma.$transaction).toHaveBeenCalled();
+    });
+
+    it('should return the real status update with a valid id', async () => {
+      const dto = {
+        catalogItemId: 'cat-item-1',
+        title: 'Book this',
+        description: 'I want to act on this recommendation',
+      };
+      const result = await service.createFromRecommendation('user-1', dto as any);
+      expect(result.statusUpdates[0]?.id).toBe('su-1');
+    });
+
+    it('should fire a notifyRequestCreated notification', async () => {
+      const dto = {
+        catalogItemId: 'cat-item-1',
+        title: 'Book restaurant',
+        description: 'I want to act on this recommendation',
+      };
+      await service.createFromRecommendation('user-1', dto as any);
+      expect(notificationService.notifyRequestCreated).toHaveBeenCalledWith(
+        'user-1',
+        'req-1',
+        'Book restaurant',
+      );
     });
   });
 

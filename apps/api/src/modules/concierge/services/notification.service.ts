@@ -54,6 +54,16 @@ export class NotificationService {
     });
   }
 
+  async notifyRequestCreated(userId: string, requestId: string, title: string): Promise<void> {
+    await this.createNotification(
+      userId,
+      NotificationType.REQUEST_UPDATE,
+      'Request received',
+      `Your request "${title}" has been submitted and will be acknowledged by your concierge team shortly.`,
+      { requestId },
+    );
+  }
+
   async notifyRequestAcknowledged(userId: string, requestId: string, title: string): Promise<void> {
     await this.createNotification(
       userId,

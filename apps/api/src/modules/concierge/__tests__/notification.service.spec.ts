@@ -102,4 +102,19 @@ describe('NotificationService', () => {
       });
     });
   });
+
+  describe('notifyRequestCreated', () => {
+    it('should create a REQUEST_UPDATE notification on request creation', async () => {
+      await service.notifyRequestCreated('user-1', 'req-1', 'Book dinner');
+      expect(prisma.notification.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            userId: 'user-1',
+            type: NotificationType.REQUEST_UPDATE,
+            data: expect.objectContaining({ requestId: 'req-1' }),
+          }),
+        }),
+      );
+    });
+  });
 });
