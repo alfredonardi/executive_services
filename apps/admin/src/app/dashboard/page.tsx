@@ -62,6 +62,7 @@ export default function DashboardPage() {
         <nav style={styles.nav}>
           {[
             { href: '/dashboard', label: 'Dashboard' },
+            { href: '/conversations', label: 'Conversations' },
             { href: '/requests', label: 'Requests' },
             { href: '/users', label: 'Users' },
             { href: '/catalog', label: 'Catalog' },
