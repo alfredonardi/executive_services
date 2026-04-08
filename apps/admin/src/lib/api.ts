@@ -48,6 +48,49 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export type ConversationStatus = 'ACTIVE' | 'HUMAN_HANDOFF' | 'RESOLVED' | 'ARCHIVED';
 export type MessageRole = 'USER' | 'AI' | 'AGENT';
+export type RequestStatus = 'PENDING' | 'ACKNOWLEDGED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+export type RequestPriority = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+
+export interface RequestStatusUpdate {
+  id: string;
+  requestId: string;
+  status: RequestStatus;
+  notes: string | null;
+  agentId: string | null;
+  createdAt: string;
+}
+
+export interface AdminRequestSummary {
+  id: string;
+  status: RequestStatus;
+  priority: RequestPriority;
+  title: string;
+  category: string | null;
+  assignedAgentId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    company: string | null;
+    nationality: string | null;
+  };
+  assignedAgent: { id: string; firstName: string; lastName: string } | null;
+  _count: { statusUpdates: number };
+}
+
+export interface AdminRequestDetail extends Omit<AdminRequestSummary, '_count'> {
+  description: string;
+  notes: string | null;
+  dueAt: string | null;
+  completedAt: string | null;
+  conversationId: string | null;
+  sourceRecommendationId: string | null;
+  statusUpdates: RequestStatusUpdate[];
+  conversation: { id: string; status: string; title: string | null } | null;
+  user: AdminRequestSummary['user'] & { title: string | null; timezone: string };
+}
 
 export interface AdminConversationSummary {
   id: string;
@@ -105,6 +148,31 @@ export const adminApi = {
 
   assignSelf(conversationId: string, agentId: string): Promise<unknown> {
     return request(`/conversations/${conversationId}/assign`, {
+      method: 'POST',
+      body: JSON.stringify({ agentId }),
+    });
+  },
+
+  // ── Requests ────────────────────────────────────────────────────────────────
+
+  listRequests(status?: RequestStatus): Promise<AdminRequestSummary[]> {
+    const qs = status ? `?status=${status}` : '';
+    return request<AdminRequestSummary[]>(`/admin/requests${qs}`);
+  },
+
+  getRequest(id: string): Promise<AdminRequestDetail> {
+    return request<AdminRequestDetail>(`/admin/requests/${id}`);
+  },
+
+  updateRequestStatus(id: string, status: RequestStatus, notes?: string): Promise<unknown> {
+    return request(`/admin/requests/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status, notes }),
+    });
+  },
+
+  assignRequest(id: string, agentId: string): Promise<unknown> {
+    return request(`/admin/requests/${id}/assign`, {
       method: 'POST',
       body: JSON.stringify({ agentId }),
     });

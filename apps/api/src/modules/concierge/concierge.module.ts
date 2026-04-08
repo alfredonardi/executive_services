@@ -14,6 +14,7 @@ import { ConversationController } from './controllers/conversation.controller';
 import { ConciergeRequestController } from './controllers/concierge-request.controller';
 import { NotificationController } from './controllers/notification.controller';
 import { AdminConversationController } from './controllers/admin-conversation.controller';
+import { AdminRequestController } from './controllers/admin-request.controller';
 
 @Module({
   imports: [PrismaModule, AiModule, CalendarModule],
@@ -22,6 +23,7 @@ import { AdminConversationController } from './controllers/admin-conversation.co
     ConciergeRequestController,
     NotificationController,
     AdminConversationController,
+    AdminRequestController,
   ],
   providers: [
     ConversationService,
