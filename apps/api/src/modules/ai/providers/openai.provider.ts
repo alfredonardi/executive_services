@@ -7,14 +7,19 @@ import { AIProvider, AIResponse, ChatMessage, ChatOptions, EmbedOptions } from '
 export class OpenAIProvider implements AIProvider {
   readonly name = 'openai';
   private readonly logger = new Logger(OpenAIProvider.name);
-  private readonly client: OpenAI;
+  private readonly apiKey?: string;
+  private client: OpenAI | null = null;
   private readonly defaultModel: string;
 
   constructor(private readonly config: ConfigService) {
-    this.client = new OpenAI({
-      apiKey: this.config.get<string>('ai.openaiApiKey'),
-    });
+    this.apiKey = this.config.get<string>('ai.openaiApiKey');
     this.defaultModel = this.config.get<string>('ai.model') ?? 'gpt-4o-mini';
+
+    if (!this.apiKey) {
+      this.logger.warn(
+        'OPENAI_API_KEY is not configured. The API can start, but AI endpoints will fail until a valid key is provided.',
+      );
+    }
   }
 
   async chat(messages: ChatMessage[], options?: ChatOptions): Promise<AIResponse> {
@@ -22,7 +27,7 @@ export class OpenAIProvider implements AIProvider {
     const start = Date.now();
 
     try {
-      const response = await this.client.chat.completions.create({
+      const response = await this.getClient().chat.completions.create({
         model,
         messages,
         max_tokens: options?.maxTokens ?? 1024,
@@ -50,7 +55,7 @@ export class OpenAIProvider implements AIProvider {
   async *chatStream(messages: ChatMessage[], options?: ChatOptions): AsyncIterable<string> {
     const model = options?.model ?? this.defaultModel;
 
-    const stream = await this.client.chat.completions.create({
+    const stream = await this.getClient().chat.completions.create({
       model,
       messages,
       max_tokens: options?.maxTokens ?? 1024,
@@ -69,7 +74,7 @@ export class OpenAIProvider implements AIProvider {
   async embed(text: string, options?: EmbedOptions): Promise<number[]> {
     const model = options?.model ?? 'text-embedding-3-small';
 
-    const response = await this.client.embeddings.create({
+    const response = await this.getClient().embeddings.create({
       model,
       input: text,
     });
@@ -80,5 +85,17 @@ export class OpenAIProvider implements AIProvider {
     }
 
     return embedding;
+  }
+
+  private getClient(): OpenAI {
+    if (!this.apiKey) {
+      throw new Error('OPENAI_API_KEY is not configured');
+    }
+
+    if (!this.client) {
+      this.client = new OpenAI({ apiKey: this.apiKey });
+    }
+
+    return this.client;
   }
 }

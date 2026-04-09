@@ -22,6 +22,7 @@
     "clean": "turbo run clean"
   },
   "devDependencies": {
+    "@nestjs/platform-express": "^11.1.18",
     "prettier": "^3.3.3",
     "turbo": "^2.3.3",
     "typescript": "^5.6.3"
